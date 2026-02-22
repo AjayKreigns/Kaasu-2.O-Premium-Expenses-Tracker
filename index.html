@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaasu - Premium Expense Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <!-- ECharts for Reports -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+
+    <!-- jsPDF for PDF Download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar animate-left">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class='bx bx-wallet-alt'></i>
+                    <span>Kaasu</span>
+                </div>
+                <div class="by-author">by AK</div>
+            </div>
+
+            <ul class="nav-links">
+                <li class="active" data-page="dashboard"><i class='bx bxs-dashboard'></i> Dashboard</li>
+                <li data-page="transactions"><i class='bx bx-transfer'></i> Transactions</li>
+                <li data-page="budget"><i class='bx bx-target-lock'></i> Budgets</li>
+                <li data-page="reports"><i class='bx bx-pie-chart-alt-2'></i> Reports</li>
+            </ul>
+
+            <div class="theme-picker" style="margin-top: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div>
+                    <label
+                        style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block;">Theme
+                        Palette</label>
+                    <select id="theme-selector" class="input-field" style="padding: 0.5rem; font-size: 0.9rem;">
+                        <option value="panther">Black Panther</option>
+                        <option value="matrix">Neon Matrix</option>
+                        <option value="cyberpunk">Cyberpunk</option>
+                        <option value="ocean">Deep Ocean</option>
+                    </select>
+                </div>
+                <button id="theme-mode-toggle" class="btn btn-secondary"
+                    style="width: 100%; justify-content: center; padding: 0.5rem; font-size: 0.9rem;">
+                    <i class='bx bx-sun'></i> Toggle Mode
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="animate-down stagger-1">
+                <div class="header-title">
+                    <h1 id="page-title">Dashboard</h1>
+                    <p id="page-subtitle">Welcome back, here's your financial overview.</p>
+                </div>
+                <div class="header-actions" style="display: flex; gap: 1rem; align-items: center;">
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <select id="dash-date-filter" class="input-field page-filter-dash"
+                            style="width: auto; display: none;">
+                            <option value="30">Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
+                            <option value="all" selected>All Time</option>
+                            <option value="custom">Custom Date</option>
+                        </select>
+                        <div id="dash-custom-dates" style="display: none; align-items: center; gap: 0.5rem;"
+                            class="page-filter-dash">
+                            <input type="date" id="dash-start-date" class="input-field"
+                                style="padding: 0.4rem; font-size: 0.8rem;">
+                            <span style="color: var(--text-secondary);">to</span>
+                            <input type="date" id="dash-end-date" class="input-field"
+                                style="padding: 0.4rem; font-size: 0.8rem;">
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" id="btn-download-pdf" style="display: none;">
+                        <i class='bx bxs-file-pdf'></i> Export PDF
+                    </button>
+                    <button class="btn btn-secondary" id="btn-export-data" style="display: none;"
+                        title="Export Backup Data">
+                        <i class='bx bx-export'></i>
+                    </button>
+                    <button class="btn btn-secondary" id="btn-import-data" style="display: none;"
+                        title="Import Backup Data" onclick="document.getElementById('file-import').click()">
+                        <i class='bx bx-import'></i>
+                    </button>
+                    <input type="file" id="file-import" style="display:none" accept=".csv">
+                    <button class="btn btn-primary" id="btn-add-expense">
+                        <i class='bx bx-plus'></i> Add Transaction
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Page -->
+            <section id="page-dashboard" class="page active-page">
+                <div class="summary-cards">
+                    <div class="card summary-card gradient-income animate-up stagger-1">
+                        <div class="card-icon"><i class='bx bx-trending-up'></i></div>
+                        <div class="card-info">
+                            <h3>Total Income</h3>
+                            <h2 id="dash-total-income">₹0</h2>
+                        </div>
+                    </div>
+                    <div class="card summary-card gradient-expense animate-up stagger-2">
+                        <div class="card-icon"><i class='bx bx-trending-down'></i></div>
+                        <div class="card-info">
+                            <h3>Total Spent</h3>
+                            <h2 id="dash-total-spent">₹0</h2>
+                        </div>
+                    </div>
+                    <div class="card summary-card gradient-balance animate-up stagger-3">
+                        <div class="card-icon"><i class='bx bx-wallet'></i></div>
+                        <div class="card-info">
+                            <h3>Current Balance</h3>
+                            <h2 id="dash-balance">₹0</h2>
+                        </div>
+                    </div>
+                    <div class="card summary-card gradient-savings animate-up stagger-4">
+                        <div class="card-icon" style="flex-shrink: 0;"><i class='bx bx-coin-stack'></i></div>
+                        <div class="card-info" style="overflow: hidden;">
+                            <h3>Total Savings</h3>
+                            <h2 id="dash-savings">₹0</h2>
+                            <p id="dash-savings-insight"
+                                style="font-size: 0.8rem; margin-top: 5px; opacity: 0.9; line-height: 1.3; overflow-wrap: break-word; word-wrap: break-word; hyphens: auto;">
+                                Pona
+                                masathuku data illappa</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card recent-expenses animate-up stagger-4">
+                        <div class="card-header">
+                            <h3>Recent Transactions</h3>
+                            <button class="btn btn-icon" onclick="app.navigate('transactions')"><i
+                                    class='bx bx-right-arrow-alt'></i></button>
+                        </div>
+                        <div class="table-container">
+                            <table id="dash-recent-table">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th>Type</th>
+                                        <th>Category</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card category-chart-card animate-up stagger-5">
+                        <div class="card-header">
+                            <h3>Expense Breakdown</h3>
+                        </div>
+                        <div class="chart-container-small" id="dashCategoryChart" style="min-height: 250px;">
+                            <!-- Echarts dom -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions Page -->
+            <section id="page-transactions" class="page">
+                <div class="card full-height animate-up stagger-1">
+                    <div class="card-header filter-header">
+                        <h3>Transaction History</h3>
+                        <div class="filters">
+                            <select id="trans-date-filter" class="input-field">
+                                <option value="all" selected>All Time</option>
+                                <option value="30">Last 30 Days</option>
+                                <option value="90">Last 90 Days</option>
+                                <option value="custom">Custom Date</option>
+                            </select>
+                            <div id="trans-custom-dates" style="display: none; align-items: center; gap: 0.5rem;">
+                                <input type="date" id="trans-start-date" class="input-field"
+                                    style="padding: 0.4rem; font-size: 0.8rem;">
+                                <span style="color: var(--text-secondary);">to</span>
+                                <input type="date" id="trans-end-date" class="input-field"
+                                    style="padding: 0.4rem; font-size: 0.8rem;">
+                            </div>
+                            <input type="text" id="trans-search" class="input-field" placeholder="Search details..."
+                                style="width: 150px; padding: 0.4rem; font-size: 0.85rem;">
+                            <select id="filter-type" class="input-field">
+                                <option value="All">All Types</option>
+                                <option value="income">Income</option>
+                                <option value="expense">Expense</option>
+                            </select>
+                            <select id="filter-category" class="input-field">
+                                <option value="All">All Categories</option>
+                            </select>
+                            <select id="trans-pagination" class="input-field">
+                                <option value="10">Show 10</option>
+                                <option value="50">Show 50</option>
+                                <option value="100">Show 100</option>
+                                <option value="all" selected>Show All</option>
+                            </select>
+                            <button id="btn-clear-filters" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+                                <i class='bx bx-filter-alt'></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="expenses-table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Type</th>
+                                    <th>Category</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Budget Page -->
+            <section id="page-budget" class="page">
+                <div class="budget-header animate-up stagger-1">
+                    <div class="card total-budget-card border-accent">
+                        <h3>Total Budget Control</h3>
+                        <p>Set limits for different expense categories to keep your spending in check.</p>
+                        <button class="btn btn-secondary mt-1" id="btn-set-budget"><i class='bx bx-edit-alt'></i> Edit
+                            Budgets</button>
+                    </div>
+                </div>
+
+                <div class="budget-grid" id="budget-progress-container">
+                    <!-- Populated by JS -->
+                </div>
+            </section>
+
+            <!-- Reports Page -->
+            <section id="page-reports" class="page">
+                <div class="card-header filter-header animate-up stagger-1 mb-2">
+                    <h3 style="font-size: 1.5rem; color: var(--accent-main-light);">Financial KPIs</h3>
+                </div>
+
+                <div class="summary-cards" style="margin-bottom: 1.5rem;">
+                    <div class="card summary-card animate-up stagger-2" style="padding: 1.5rem;">
+                        <div class="card-info">
+                            <h3 style="color: var(--accent-green);">Savings Rate</h3>
+                            <h2 id="rep-savings-rate">0%</h2>
+                        </div>
+                    </div>
+                    <div class="card summary-card animate-up stagger-3" style="padding: 1.5rem;">
+                        <div class="card-info">
+                            <h3 style="color: var(--accent-red);">Top Category</h3>
+                            <h2 id="rep-top-expense">-</h2>
+                        </div>
+                    </div>
+                    <div class="card summary-card animate-up stagger-4" style="padding: 1.5rem;">
+                        <div class="card-info">
+                            <h3 style="color: var(--accent-main-light);">Avg Daily Spend</h3>
+                            <h2 id="rep-daily-spend">₹0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reports-grid animate-up stagger-5" style="margin-top: 1.5rem;">
+                    <div class="card full-width">
+                        <div class="card-header filter-header">
+                            <h3>Trend Over Time</h3>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <select id="report-date-filter" class="input-field" style="width: auto;">
+                                    <option value="30">Last 30 Days</option>
+                                    <option value="90">Last 90 Days</option>
+                                    <option value="365">Last 365 Days</option>
+                                    <option value="all" selected>All Time</option>
+                                    <option value="custom">Custom Range</option>
+                                </select>
+                                <div id="report-custom-dates" style="display: none; align-items: center; gap: 0.5rem;">
+                                    <input type="date" id="report-start-date" class="input-field"
+                                        style="padding: 0.4rem; font-size: 0.8rem;">
+                                    <span style="color: var(--text-secondary);">to</span>
+                                    <input type="date" id="report-end-date" class="input-field"
+                                        style="padding: 0.4rem; font-size: 0.8rem;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container" id="trendChart">
+                            <!-- Echarts bar dom -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add/Edit Transaction Modal -->
+    <div class="modal" id="modal-expense">
+        <div class="modal-content animate-pop">
+            <div class="modal-header">
+                <h3 id="expense-modal-title">Add Transaction</h3>
+                <button class="btn-close"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-expense">
+                    <input type="hidden" id="exp-id">
+
+                    <div class="form-group type-toggle-group">
+                        <div class="type-toggle">
+                            <input type="radio" id="type-expense" name="trans-type" value="expense" checked>
+                            <label for="type-expense" class="toggle-btn toggle-expense">Expense</label>
+
+                            <input type="radio" id="type-income" name="trans-type" value="income">
+                            <label for="type-income" class="toggle-btn toggle-income">Income</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exp-amount">Amount (₹)</label>
+                        <input type="number" id="exp-amount" class="input-field" required min="1" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="exp-desc">Description (Optional)</label>
+                        <input type="text" id="exp-desc" class="input-field" placeholder="e.g., Groceries or Salary">
+                    </div>
+                    <div class="form-group">
+                        <label for="exp-category">Category</label>
+                        <select id="exp-category" class="input-field" required>
+                            <!-- Populated dynamically by JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="exp-date">Date</label>
+                        <input type="date" id="exp-date" class="input-field" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-ghost btn-cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Transaction</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Set Budget Modal -->
+    <div class="modal" id="modal-budget">
+        <div class="modal-content animate-pop">
+            <div class="modal-header">
+                <h3>Set Budgets</h3>
+                <button class="btn-close"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-budget">
+                    <div id="budget-inputs-container">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div class="form-actions mt-2">
+                        <button type="button" class="btn btn-ghost btn-cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Budgets</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
