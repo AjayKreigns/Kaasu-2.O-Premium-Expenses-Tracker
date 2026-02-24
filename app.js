@@ -52,6 +52,8 @@ const app = {
             expDesc: document.getElementById('exp-desc'),
             expCategory: document.getElementById('exp-category'),
             expDate: document.getElementById('exp-date'),
+            expRecurring: document.getElementById('exp-recurring'),
+            budgetRolloverToggle: document.getElementById('budget-rollover-toggle'),
 
             // Dashboard
             dashTotalIncome: document.getElementById('dash-total-income'),
@@ -71,6 +73,7 @@ const app = {
             btnImportData: document.getElementById('btn-import-data'),
             fileImport: document.getElementById('file-import'),
             transPagination: document.getElementById('trans-pagination'),
+            btnClearTrans: document.getElementById('btn-clear-transactions'),
 
             // Reports Filter
             reportDateFilter: document.getElementById('report-date-filter'),
@@ -121,7 +124,12 @@ const app = {
         this.els.btnSetBudget.addEventListener('click', () => this.openBudgetModal());
         this.els.btnDownloadPdf.addEventListener('click', () => this.downloadPDF());
         this.els.btnExportData?.addEventListener('click', () => this.exportCSV());
-        this.els.fileImport?.addEventListener('change', (e) => this.importCSV(e));
+        this.els.fileImport?.addEventListener('change', (e) => this.importData(e));
+
+        const btnSuggest = document.getElementById('btn-suggest-upgrades');
+        if (btnSuggest) {
+            btnSuggest.addEventListener('click', () => this.sendFeedback());
+        }
 
         this.els.closeBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -130,14 +138,37 @@ const app = {
             });
         });
 
+        if (this.els.btnClearTrans) {
+            this.els.btnClearTrans.addEventListener('click', () => this.clearAllTransactions());
+        }
+
         // Form Type Toggle
         this.els.typeInputs.forEach(input => {
             input.addEventListener('change', (e) => this.populateFormCategories(e.target.value));
         });
 
-        // Forms
+        // Smart Category Auto-Suggest
+        this.els.expDesc.addEventListener('blur', (e) => this.autoSuggestCategory(e.target.value));
+
+        // Forms Submit
         this.els.expForm.addEventListener('submit', (e) => this.handleTransactionSubmit(e));
-        this.els.budgetForm.addEventListener('submit', (e) => this.handleBudgetSubmit(e));
+        this.els.budgetForm.addEventListener('submit', (e) => {
+            this.handleBudgetSubmit(e);
+        });
+
+        // Global Keyboard Shortcut (Quick Add)
+        document.addEventListener('keydown', (e) => {
+            // Ignore if typing in an input or textarea
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+            const isAKey = e.key === 'a' || e.key === 'A';
+            const hasModifier = e.ctrlKey || e.metaKey; // Ctrl+A or Cmd+A (Mac)
+
+            if (isAKey || (hasModifier && isAKey)) {
+                e.preventDefault();
+                this.openTransactionModal();
+            }
+        });
 
         // Filters
         this.els.filterType.addEventListener('change', (e) => {
@@ -217,6 +248,42 @@ const app = {
         setupCustomDateToggle(this.els.reportDateFilter, this.els.reportCustomDates, this.els.reportStartDate, this.els.reportEndDate, () => {
             this.updateCharts();
         });
+
+        this.checkRecurringTransactions();
+        this.checkDailyReminder();
+    },
+
+    checkDailyReminder() {
+        if ('Notification' in window) {
+            Notification.requestPermission();
+
+            const lastNotified = localStorage.getItem('kaasu_last_notified');
+            const todayStr = new Date().toDateString();
+
+            if (lastNotified !== todayStr) {
+                const now = new Date();
+                // If it's past 8 PM
+                if (now.getHours() >= 20) {
+                    // Check if a transaction exists today
+                    const todayLocalStr = now.toISOString().split('T')[0];
+                    const hasLoggedToday = this.expenses.some(e => e.date === todayLocalStr);
+
+                    if (!hasLoggedToday) {
+                        try {
+                            if (Notification.permission === 'granted') {
+                                new Notification('Kaasu Expense Tracker', {
+                                    body: "Don't forget to log your expenses today! Keep your budget up to date.",
+                                    icon: 'favicon.ico'
+                                });
+                                localStorage.setItem('kaasu_last_notified', todayStr);
+                            }
+                        } catch (err) {
+                            console.warn("Notifications not supported or blocked.");
+                        }
+                    }
+                }
+            }
+        }
     },
 
     // Navigation Logic
@@ -238,6 +305,7 @@ const app = {
         this.els.btnDownloadPdf.style.display = (pageId === 'transactions') ? 'inline-flex' : 'none';
         if (this.els.btnExportData) this.els.btnExportData.style.display = (pageId === 'transactions') ? 'inline-flex' : 'none';
         if (this.els.btnImportData) this.els.btnImportData.style.display = (pageId === 'transactions') ? 'inline-flex' : 'none';
+        if (this.els.btnClearTrans) this.els.btnClearTrans.style.display = (pageId === 'transactions') ? 'inline-flex' : 'none';
 
         if (pageId === 'dashboard') {
             this.els.dashDateFilter.style.display = 'block';
@@ -247,11 +315,13 @@ const app = {
 
         // Refresh charts if needed
         if (pageId === 'reports' || pageId === 'dashboard') {
-            // Slight delay to allow display:block to render widths
+            // Slight delay to allow display:block to render widths and CSS transitions to finish
             setTimeout(() => {
                 this.updateCharts();
+                if (this.charts.dashCat) this.charts.dashCat.resize();
+                if (this.charts.trend) this.charts.trend.resize();
                 if (pageId === 'dashboard') this.renderDashboardSummary();
-            }, 50);
+            }, 100);
         }
     },
 
@@ -356,6 +426,15 @@ const app = {
             const start = new Date(startInput.value);
             const end = new Date(endInput.value);
             end.setHours(23, 59, 59, 999);
+            return dataset.filter(e => {
+                const d = new Date(e.date);
+                return d >= start && d <= end;
+            });
+        }
+        if (filterValue === 'current_month') {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), now.getMonth(), 1);
+            const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
             return dataset.filter(e => {
                 const d = new Date(e.date);
                 return d >= start && d <= end;
@@ -565,42 +644,84 @@ const app = {
 
         const catTotals = {};
         this.expenseCategories.forEach(c => catTotals[c] = 0);
+
+        // Envelope Budget Rollover Math
+        const isRolloverEnabled = document.getElementById('budget-rollover-toggle')?.checked;
+        let firstExpenseDates = {};
+
         this.expenses.filter(e => e.type === 'expense').forEach(exp => {
+            // For rollover we need ALL time expenses, otherwise just current month if not enabled.
+            // Wait, we can't easily filter 'current month' without doubling up loops.
+            // Let's rely on getFilteredDataByDate for current month for the baseline.
+        });
+
+        // Current Month Expenses
+        const currentMonthData = this.getFilteredDataByDate(this.expenses, 'current_month');
+        currentMonthData.filter(e => e.type === 'expense').forEach(exp => {
             if (catTotals[exp.category] !== undefined) catTotals[exp.category] += Number(exp.amount);
-            else catTotals['Other'] += Number(exp.amount);
         });
 
         this.expenseCategories.forEach((cat, index) => {
-            const spent = catTotals[cat] || 0;
             const limit = this.budgets[cat] || 0;
+            const spent = catTotals[cat];
 
-            let percentage = 0;
-            if (limit > 0) percentage = (spent / limit) * 100;
-            else if (spent > 0) percentage = 100; // Spent but no limit set
+            let rolloverLeftover = 0;
+
+            if (isRolloverEnabled && limit > 0) {
+                let allTimeCatExp = 0;
+                let firstDate = new Date();
+
+                // Find all time spending for this category
+                this.expenses.forEach(e => {
+                    if (e.type === 'expense' && e.category === cat) {
+                        allTimeCatExp += Number(e.amount);
+                        const d = new Date(e.date);
+                        if (d < firstDate) firstDate = d;
+                    }
+                });
+
+                // Calculate how many months have passed since the first expense in this category
+                const now = new Date();
+                let monthsPassed = (now.getFullYear() - firstDate.getFullYear()) * 12;
+                monthsPassed -= firstDate.getMonth();
+                monthsPassed += now.getMonth();
+                monthsPassed = Math.max(1, monthsPassed + 1); // At least 1 (current month)
+
+                const allTimeLimit = limit * monthsPassed;
+                rolloverLeftover = Math.max(0, allTimeLimit - allTimeCatExp - limit); // Leftover up to last month
+            }
+
+            const adjustedLimit = limit + rolloverLeftover;
+            const remaining = adjustedLimit - spent;
+            const percentage = adjustedLimit > 0 ? (spent / adjustedLimit) * 100 : (spent > 0 ? 100 : 0);
 
             let progressClass = 'progress-good';
-            let msg = 'Semma! Vera level control!';
-            if (percentage >= 100) { progressClass = 'progress-danger'; msg = 'Ayyo! Budget thandi pochu!'; }
-            else if (percentage >= 80) { progressClass = 'progress-warn'; msg = 'Kavanama irunga!'; }
-
-            const today = new Date();
-            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-            const daysLeft = lastDay - today.getDate() + 1;
-            const remaining = limit - spent;
-
-            if (limit > 0 && remaining > 0) {
-                const dailySafe = Math.floor(remaining / daysLeft);
-                msg += ` (Safe ₹${dailySafe}/day)`;
-            } else if (limit > 0 && remaining <= 0) {
-                msg += ` (No limit left!)`;
-            }
+            if (percentage >= 100) progressClass = 'progress-danger';
+            else if (percentage >= 80) progressClass = 'progress-warn';
 
             const item = document.createElement('div');
             item.className = `card budget-card animate-up stagger-${(index % 5) + 1}`;
+            item.style.animationDelay = `${index * 0.1}s`;
+
+            const today = new Date();
+            const daysLeft = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() - today.getDate() + 1;
+
+            let msg = '';
+            if (adjustedLimit > 0 && remaining > 0) {
+                const dailySafe = Math.floor(remaining / daysLeft);
+                msg += ` (Safe ₹${dailySafe}/day)`;
+            } else if (adjustedLimit > 0 && remaining <= 0) {
+                msg += ` (No limit left!)`;
+            }
+
+            if (rolloverLeftover > 0) {
+                msg += ` | +₹${this.formatMoney(rolloverLeftover)} Rollover`;
+            }
+
             item.innerHTML = `
                 <div class="budget-info">
                     <span class="budget-cat">${cat}</span>
-                    <span class="budget-amt">${this.formatMoney(spent)} / ${this.formatMoney(limit)}</span>
+                    <span class="budget-amt">${this.formatMoney(spent)} / ${this.formatMoney(adjustedLimit)}</span>
                 </div>
                 <div class="progress-bar">
                     <div class="progress-fill ${progressClass}" style="width: ${Math.min(percentage, 100)}%"></div>
@@ -635,11 +756,30 @@ const app = {
             this.els.expForm.reset();
             document.querySelector(`input[name="trans-type"][value="expense"]`).checked = true;
             this.populateFormCategories('expense');
-            this.els.expDate.valueAsDate = new Date();
+            this.els.expCategory.value = '';
+            this.els.expDate.value = new Date().toISOString().split('T')[0];
+            if (this.els.expRecurring) this.els.expRecurring.value = 'none';
             document.getElementById('exp-id').value = '';
         }
 
         this.els.modalExp.classList.add('show');
+    },
+
+    autoSuggestCategory(descText) {
+        if (!descText || descText.trim() === '') return;
+        const search = descText.toLowerCase().trim();
+
+        // Find most recent transaction with this exact description
+        // Reverse array or search backwards (assuming timeline sorted)
+        const match = [...this.expenses].reverse().find(e => e.desc.toLowerCase().trim() === search);
+
+        if (match && this.els.expCategory) {
+            // Only update if the type matches the current form type
+            const currentType = document.querySelector('input[name="trans-type"]:checked').value;
+            if (match.type === currentType) {
+                this.els.expCategory.value = match.category;
+            }
+        }
     },
 
     openBudgetModal() {
@@ -671,7 +811,15 @@ const app = {
             return;
         }
 
-        const trans = { type, amount: Number(amount), desc, category, date };
+        const trans = {
+            type,
+            amount: Number(amount),
+            desc,
+            category,
+            date,
+            recurring: this.els.expRecurring ? this.els.expRecurring.value : 'none',
+            lastRecurringDate: date
+        };
 
         const tx = this.db.transaction('expenses', 'readwrite');
         const store = tx.objectStore('expenses');
@@ -728,6 +876,72 @@ const app = {
 
         await this.loadData();
         this.updateUI();
+    },
+
+    async clearAllTransactions() {
+        if (!confirm('WARNING: Are you sure you want to completely delete ALL transactions? This action cannot be undone!')) return;
+
+        const tx = this.db.transaction('expenses', 'readwrite');
+        const store = tx.objectStore('expenses');
+        await new Promise(resolve => {
+            const req = store.clear();
+            req.onsuccess = resolve;
+        });
+
+        this.expenses = [];
+        await this.loadData();
+        this.updateUI();
+    },
+
+    async checkRecurringTransactions() {
+        if (!this.expenses || this.expenses.length === 0) return;
+
+        let modifications = false;
+        const tx = this.db.transaction('expenses', 'readwrite');
+        const store = tx.objectStore('expenses');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (const e of this.expenses) {
+            if (!e.recurring || e.recurring === 'none') continue;
+
+            let lastDate = new Date(e.lastRecurringDate || e.date);
+            lastDate.setHours(0, 0, 0, 0);
+
+            // Generate all missing intervals up to today
+            while (true) {
+                let nextDate = new Date(lastDate);
+                if (e.recurring === 'daily') nextDate.setDate(nextDate.getDate() + 1);
+                else if (e.recurring === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+                else if (e.recurring === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+
+                if (nextDate > today) break;
+
+                // Create duplicate
+                const clone = { ...e };
+                delete clone.id; // Let IndexedDB assign a new ID
+                clone.date = nextDate.toISOString().split('T')[0];
+                clone.lastRecurringDate = clone.date;
+
+                store.add(clone);
+
+                // Update original anchor item
+                e.lastRecurringDate = clone.date;
+                store.put(e);
+
+                lastDate = new Date(nextDate);
+                modifications = true;
+            }
+        }
+
+        if (modifications) {
+            await new Promise((res, rej) => {
+                tx.oncomplete = res;
+                tx.onerror = rej;
+            });
+            await this.loadData();
+            this.updateUI();
+        }
     },
 
     editTransaction(id) {
@@ -894,63 +1108,67 @@ const app = {
         URL.revokeObjectURL(url);
     },
 
-    async importCSV(e) {
+    async importData(e) {
         if (!e.target.files.length) return;
         const file = e.target.files[0];
         const reader = new FileReader();
+
         reader.onload = async (event) => {
             try {
-                const text = event.target.result;
-                const lines = text.split("\n").filter(l => l.trim().length > 0);
-                if (lines.length < 2) throw new Error("Empty CSV");
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert to JSON array of arrays
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                if (rows.length < 2) throw new Error("Empty or invalid file");
 
                 const tx = this.db.transaction(['expenses'], 'readwrite');
                 const storeE = tx.objectStore('expenses');
                 await new Promise(res => { storeE.clear().onsuccess = res; });
 
-                for (let i = 1; i < lines.length; i++) {
-                    let rowStr = lines[i];
-                    let row = [];
-                    let insideQuote = false;
-                    let currentWord = '';
-                    for (let char of rowStr) {
-                        if (char === '"') insideQuote = !insideQuote;
-                        else if (char === ',' && !insideQuote) {
-                            row.push(currentWord);
-                            currentWord = '';
-                        }
-                        else currentWord += char;
-                    }
-                    row.push(currentWord);
+                // Start from 1 to skip headers
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.length === 0) continue; // Skip empty rows
 
-                    if (row.length >= 6) {
-                        const amount = Number(row[2]);
-                        const type = row[1];
-                        const date = row[5].trim();
-                        if (!isNaN(amount) && (type === 'income' || type === 'expense')) {
-                            storeE.add({
-                                id: Number(row[0]) || Date.now() + i,
-                                type: type,
-                                amount: amount,
-                                desc: row[3].replace(/^"|"$/g, '').replace(/""/g, '"'),
-                                category: row[4].replace(/^"|"$/g, '').replace(/""/g, '"'),
-                                date: date
-                            });
-                        }
+                    // Expected Headers format: ["ID", "Type", "Amount", "Description", "Category", "Date"]
+                    // Mapping row indices based on export format
+                    const id = Number(row[0]) || Date.now() + i;
+                    const type = String(row[1]).toLowerCase().trim();
+                    const amount = Number(row[2]);
+                    const desc = String(row[3] || 'N/A').trim();
+                    const category = String(row[4] || 'Other').trim();
+                    const date = row[5] ? String(row[5]).trim() : new Date().toISOString().split('T')[0];
+
+                    if (!isNaN(amount) && (type === 'income' || type === 'expense')) {
+                        storeE.add({
+                            id: id,
+                            type: type,
+                            amount: amount,
+                            desc: desc,
+                            category: category,
+                            date: date
+                        });
                     }
                 }
 
-                alert("CSV Data Successfully Imported!");
+                alert("Data Successfully Imported!");
                 this.els.fileImport.value = '';
                 await this.loadData();
                 this.updateUI();
 
             } catch (err) {
-                alert("Failed to import. Ensure file is a valid Kaasu Backup CSV.");
+                console.error(err);
+                alert("Failed to import. Ensure file is a valid Kaasu Backup CSV or XLSX.");
                 this.els.fileImport.value = '';
             }
         };
-        reader.readAsText(file);
+
+        reader.readAsArrayBuffer(file);
     },
 
     // --- Charts (ECharts) ---
@@ -994,26 +1212,34 @@ const app = {
         const catTotals = {};
         let totalDashExp = 0;
         dashData.filter(e => e.type === 'expense').forEach(e => {
-            const val = Number(e.amount);
+            const val = Number(e.amount) || 0;
             catTotals[e.category] = (catTotals[e.category] || 0) + val;
             totalDashExp += val;
         });
 
-        if (totalDashExp === 0) totalDashExp = 1;
+        // Ensure we don't divide by zero for rendering percentages 
+        const dashTotalDivisor = totalDashExp > 0 ? totalDashExp : 1;
 
         const dashBarData = Object.keys(catTotals).map((key, index) => ({
             name: key,
-            value: ((catTotals[key] / totalDashExp) * 100),
+            value: ((catTotals[key] / dashTotalDivisor) * 100),
             rawValue: catTotals[key],
             itemStyle: { color: professionalColors[index % professionalColors.length], borderRadius: [0, 6, 6, 0] }
         })).sort((a, b) => b.value - a.value);
 
         const textColor = rootStyles.getPropertyValue('--text-primary').trim() || '#fafafa';
+        const isLight = document.documentElement.getAttribute('data-theme-mode') === 'light';
+        const tooltipBg = isLight ? '#ffffff' : '#1f1f22';
+        const tooltipBorder = isLight ? '#e4e4e7' : '#3f3f46';
 
         this.charts.dashCat.setOption({
             backgroundColor: 'transparent',
             tooltip: {
-                trigger: 'axis', confine: true, axisPointer: { type: 'shadow' }, formatter: (params) => {
+                trigger: 'axis', confine: true, axisPointer: { type: 'shadow' },
+                backgroundColor: tooltipBg,
+                borderColor: tooltipBorder,
+                textStyle: { color: textColor },
+                formatter: (params) => {
                     const d = params[0].data;
                     return `${d.name}: ₹${d.rawValue} (${d.value.toFixed(1)}%)`;
                 }
@@ -1096,6 +1322,10 @@ const app = {
             if (rVal === 'custom' && this.els.reportStartDate.value && this.els.reportEndDate.value) {
                 tStart = new Date(this.els.reportStartDate.value);
                 tEnd = new Date(this.els.reportEndDate.value);
+            } else if (rVal === 'current_month') {
+                const now = new Date();
+                tStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                tEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             } else if (rVal === 'all') {
                 if (reportData.length) {
                     tStart = new Date(reportData[reportData.length - 1].date);
@@ -1110,7 +1340,7 @@ const app = {
         }
 
         let diffDays = Math.ceil((tEnd - tStart) / (1000 * 3600 * 24)) + 1;
-        if (diffDays > 90 && this.els.reportDateFilter?.value !== 'custom') {
+        if (diffDays > 90 && this.els.reportDateFilter?.value !== 'custom' && this.els.reportDateFilter?.value !== 'current_month') {
             diffDays = 90;
             tStart = new Date();
             tStart.setDate(tEnd.getDate() - 89);
@@ -1136,17 +1366,45 @@ const app = {
 
         this.charts.trend.setOption({
             backgroundColor: 'transparent',
-            tooltip: { trigger: 'axis', confine: true, axisPointer: { type: 'shadow' } },
+            tooltip: {
+                trigger: 'axis',
+                confine: true,
+                axisPointer: { type: 'line' },
+                backgroundColor: tooltipBg,
+                borderColor: tooltipBorder,
+                textStyle: { color: textColor }
+            },
             legend: { textStyle: { color: textColor }, bottom: '2%' },
             grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
             xAxis: { type: 'category', data: trendLabels, axisLabel: { color: textColor } },
             yAxis: { type: 'value', splitLine: { lineStyle: { color: document.documentElement.getAttribute('data-theme-mode') === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)' } }, axisLabel: { color: textColor } },
-            dataZoom: [{ type: 'inside', start: diffDays > 30 ? 70 : 0, end: 100 }],
+            dataZoom: [{ type: 'inside', start: 0, end: 100 }],
             series: [
                 { name: 'Income', type: 'line', smooth: true, areaStyle: { opacity: 0.2 }, itemStyle: { color: '#10b981' }, data: Object.values(dailyInc) },
                 { name: 'Expense', type: 'line', smooth: true, areaStyle: { opacity: 0.2 }, itemStyle: { color: '#ef4444' }, data: Object.values(dailyExp) }
             ]
         }, true);
+    },
+
+    sendFeedback() {
+        const to = 'ajaykoffcl@gmail.com';
+        const subject = encodeURIComponent('Kaasu App Feedback & Upgrades');
+        const bodyText = `Hi Ajay,\n\nHere is my feedback and upgrade suggestions for Kaasu:\n\n1. \n\n`;
+        const body = encodeURIComponent(bodyText);
+
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`;
+
+        // Use _top to break out of any GitHub Pages iframes that maliciously block _blank popups
+        window.open(gmailUrl, '_top');
+
+        // Show thank you note when they return to the Kaasu tab
+        const handleFocus = () => {
+            alert('Romba nandri Kaasu use pandrathuku! (Thank you very much!)');
+            window.removeEventListener('focus', handleFocus);
+        };
+        setTimeout(() => {
+            window.addEventListener('focus', handleFocus);
+        }, 1000); // Small delay so it doesn't trigger instantly before they leave
     }
 };
 
