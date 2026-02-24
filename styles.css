@@ -224,7 +224,11 @@ p {
 }
 
 .logo i {
-    -webkit-text-fill-color: var(--accent-main-light);
+    background: inherit;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
 }
 
 .by-author {
@@ -488,6 +492,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 2rem;
     position: relative;
     overflow: hidden;
+    min-width: 0;
 }
 
 .gradient-income::before,
@@ -516,7 +521,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .gradient-savings::before {
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, var(--border-highlight) 0%, transparent 70%);
 }
 
 .card-icon {
@@ -545,11 +550,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .gradient-savings .card-icon {
-    color: #3b82f6;
+    color: var(--accent-main);
 }
 
 .card-info {
     z-index: 1;
+    min-width: 0;
+    width: 100%;
 }
 
 .card-info h3 {
@@ -557,13 +564,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: var(--text-secondary);
     font-weight: 500;
     font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-info h2 {
-    font-size: 2.5rem;
+    font-size: clamp(1.5rem, 3.5vw, 2.5rem);
     margin-top: 0.25rem;
     font-weight: 700;
     letter-spacing: -1px;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .dashboard-grid {
@@ -735,6 +747,9 @@ tbody tr:hover {
     border-radius: 20px;
     width: 90%;
     max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 1);
 }
 
@@ -761,6 +776,22 @@ tbody tr:hover {
 
 .modal-body {
     padding: 1.5rem;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Custom Scrollbar for Modal to keep it sleek */
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
 }
 
 .form-actions {
@@ -782,13 +813,19 @@ tbody tr:hover {
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+    .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 1024px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
 
     .summary-cards {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: 1fr;
     }
 }
 
@@ -981,7 +1018,7 @@ tbody tr:hover {
 }
 
 [data-theme-mode="light"] .progress-warn {
-    background: var(--accent-orange);
+    background: #d97706;
 }
 
 [data-theme-mode="light"] input[type="date"]::-webkit-calendar-picker-indicator {
