@@ -35,13 +35,6 @@ To run this project locally, follow these steps:
    ```bash
    git clone [https://github.com/your-username/kaasu-premium.git](https://github.com/your-username/kaasu-premium.git)
 
-   Gemini said
-Since your tool is a clean, financial tracker, your README should reflect that same professional and minimalist energy. A great GitHub README serves as both a manual and a landing page for potential users (or recruiters!).
-
-Here is a structured template tailored specifically for the Kaasu Premium Expense Tracker.
-
-📝 Kaasu Premium README Template
-Markdown
 # 💰 Kaasu Premium Expense Tracker
 
 **Kaasu Premium** is a sleek, privacy-focused financial management tool designed to help you take control of your spending. Built for simplicity and speed, it allows you to track accounts, manage liabilities, and visualize your financial health in real-time.
