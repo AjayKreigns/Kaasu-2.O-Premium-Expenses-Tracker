@@ -69,7 +69,6 @@ body {
     font-family: var(--font-main);
     background-color: var(--bg-main);
     color: var(--text-primary);
-    overflow: hidden;
 }
 
 /* Animations globally available */
@@ -191,7 +190,7 @@ p {
 /* App Layout */
 .app-container {
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
     width: 100vw;
 }
 
@@ -204,6 +203,8 @@ p {
     padding: 2rem 1.5rem;
     border-right: 1px solid var(--border-color);
     z-index: 10;
+    height: 100vh;
+    overflow-y: auto;
 }
 
 .logo-container {
@@ -285,12 +286,13 @@ p {
         radial-gradient(circle at bottom left, rgba(0, 0, 0, 1), transparent 400px);
     overflow-y: auto;
     padding: 2rem;
+    height: 100vh;
 }
 
 header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 2rem;
     gap: 1rem;
     flex-wrap: wrap;
@@ -303,15 +305,18 @@ header {
 
 .header-actions {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     align-items: center;
     flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 1;
+    min-width: 0;
 }
 
 /* Filters */
 .filters {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
     align-items: center;
 }
@@ -347,6 +352,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border: none;
     transition: var(--transition);
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .btn-primary {
@@ -385,7 +391,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Forms & Toggle */
 .input-field {
-    width: 100%;
     padding: 0.875rem 1rem;
     background: rgba(10, 10, 10, 0.8);
     border: 1px solid var(--border-color);
@@ -464,7 +469,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .card.full-height {
-    height: calc(100vh - 12rem);
+    height: auto;
+    min-height: 500px;
     display: flex;
     flex-direction: column;
 }
@@ -856,16 +862,16 @@ tbody tr:hover {
 /* Tablet: 768px - 1024px */
 @media (max-width: 1024px) {
     .main-content {
+        height: auto;
         padding: 1.5rem;
     }
 
     header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
     }
 
     .header-actions {
-        width: 100%;
         justify-content: flex-start;
     }
 
@@ -891,19 +897,19 @@ tbody tr:hover {
     }
 }
 
-/* Small Tablet: 768px */
+/* Small Tablet/Mobile: 768px */
 @media (max-width: 768px) {
     .app-container {
         flex-direction: column;
-        height: auto;
         min-height: 100vh;
+        height: auto;
     }
 
     /* Horizontal Sidebar → Top Navigation */
     .sidebar {
         width: 100%;
         height: auto;
-        padding: 1rem;
+        padding: 1rem 0.75rem;
         display: flex;
         flex-direction: row;
         justify-content: space-between;
@@ -920,7 +926,7 @@ tbody tr:hover {
         margin-bottom: 0;
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
     }
 
     .logo {
@@ -937,12 +943,16 @@ tbody tr:hover {
         flex-direction: row !important;
         background: transparent !important;
         gap: 0.5rem !important;
+        order: 3;
+        width: 100%;
     }
 
     .theme-picker select,
     .theme-picker button {
         padding: 0.4rem 0.8rem !important;
-        font-size: 0.8rem !important;
+        font-size: 0.75rem !important;
+        flex: 1;
+        min-width: auto;
     }
 
     /* Bottom Navigation Bar */
@@ -995,12 +1005,16 @@ tbody tr:hover {
 
     /* Main content adjust for top + bottom bars */
     .main-content {
-        padding: 1rem 1rem 80px 1rem;
-        overflow-y: auto;
+        padding: 1rem;
+        margin-bottom: 80px;
+        height: auto;
+        min-height: calc(100vh - 100px);
     }
 
     header {
         margin-bottom: 1rem;
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .header-title h1 {
@@ -1009,6 +1023,18 @@ tbody tr:hover {
 
     .header-title p {
         font-size: 0.9rem;
+    }
+
+    .header-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .header-actions .btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+        min-width: auto;
     }
 
     .summary-cards {
@@ -1061,12 +1087,13 @@ tbody tr:hover {
     .filters select,
     .filters input {
         flex: 1 1 auto;
-        min-width: 120px;
+        min-width: 100px;
         padding: 0.5rem !important;
         font-size: 0.8rem !important;
     }
 
     .input-field {
+        width: 100%;
         padding: 0.65rem 0.8rem;
         font-size: 0.9rem;
     }
@@ -1089,21 +1116,6 @@ tbody tr:hover {
 
     th {
         font-size: 0.75rem;
-    }
-
-    /* Header actions responsive */
-    .header-actions {
-        width: 100%;
-        gap: 0.5rem;
-    }
-
-    .header-actions .btn {
-        padding: 0.6rem 1rem;
-        font-size: 0.8rem;
-    }
-
-    .header-actions .btn i {
-        font-size: 0.9rem;
     }
 
     /* Modal responsive */
@@ -1156,15 +1168,15 @@ tbody tr:hover {
     /* Page specific */
     .card.full-height {
         height: auto;
-        min-height: calc(100vh - 200px);
+        min-height: auto;
     }
 }
 
 /* Mobile: 480px - 767px */
 @media (max-width: 480px) {
     .sidebar {
-        padding: 0.75rem;
-        gap: 0.75rem;
+        padding: 0.75rem 0.5rem;
+        gap: 0.5rem;
     }
 
     .logo {
@@ -1183,19 +1195,21 @@ tbody tr:hover {
     .theme-picker select,
     .theme-picker button {
         font-size: 0.7rem !important;
-        padding: 0.3rem 0.6rem !important;
+        padding: 0.3rem 0.5rem !important;
         flex: 1;
-        min-width: 80px;
+        min-width: 70px;
     }
 
     .main-content {
-        padding: 0.75rem 0.75rem 80px 0.75rem;
+        padding: 0.75rem;
+        margin-bottom: 75px;
     }
 
     header {
         flex-direction: column;
         align-items: stretch;
         margin-bottom: 0.75rem;
+        gap: 0.75rem;
     }
 
     .header-title h1 {
@@ -1210,6 +1224,7 @@ tbody tr:hover {
     .header-actions {
         flex-direction: column;
         width: 100%;
+        gap: 0.5rem;
     }
 
     .header-actions .btn {
