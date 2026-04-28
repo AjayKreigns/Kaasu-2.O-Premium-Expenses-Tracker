@@ -509,6 +509,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .summary-card {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 1.5rem;
     padding: 2rem;
     position: relative;
@@ -578,7 +579,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .card-info {
     z-index: 1;
     min-width: 0;
-    width: 100%;
+    flex: 1;
 }
 
 .card-info h3 {
@@ -598,6 +599,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     letter-spacing: -1px;
     word-break: break-word;
     overflow-wrap: break-word;
+    text-align: right;
 }
 
 .dashboard-grid {
@@ -909,7 +911,7 @@ tbody tr:hover {
     .sidebar {
         width: 100%;
         height: auto;
-        padding: 1rem 0.75rem;
+        padding: 0.75rem;
         display: flex;
         flex-direction: row;
         justify-content: space-between;
@@ -920,6 +922,7 @@ tbody tr:hover {
         top: 0;
         z-index: 50;
         flex-wrap: wrap;
+        gap: 0.75rem;
     }
 
     .logo-container {
@@ -938,21 +941,31 @@ tbody tr:hover {
         display: none;
     }
 
+    .feedback-section {
+        display: none;
+    }
+
     .theme-picker {
         margin-top: 0 !important;
         flex-direction: row !important;
         background: transparent !important;
         gap: 0.5rem !important;
-        order: 3;
-        width: 100%;
+        width: auto;
+        order: unset;
+        display: flex !important;
     }
 
     .theme-picker select,
     .theme-picker button {
-        padding: 0.4rem 0.8rem !important;
-        font-size: 0.75rem !important;
-        flex: 1;
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.7rem !important;
+        flex: 0 1 auto;
         min-width: auto;
+        white-space: nowrap;
+    }
+
+    .theme-picker select {
+        max-width: 120px;
     }
 
     /* Bottom Navigation Bar */
@@ -1038,16 +1051,17 @@ tbody tr:hover {
     }
 
     .summary-cards {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
         gap: 0.75rem;
         margin-bottom: 1rem;
     }
 
     .summary-card {
         padding: 1rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
     }
 
     .card-icon {
@@ -1056,12 +1070,14 @@ tbody tr:hover {
         font-size: 1.2rem;
     }
 
-    .summary-card h2 {
-        font-size: 1.25rem;
+    .card-info h3 {
+        font-size: 0.8rem;
+        white-space: normal;
     }
 
-    .summary-card h3 {
-        font-size: 0.8rem;
+    .card-info h2 {
+        font-size: 1.2rem;
+        text-align: right;
     }
 
     .card {
@@ -1175,7 +1191,7 @@ tbody tr:hover {
 /* Mobile: 480px - 767px */
 @media (max-width: 480px) {
     .sidebar {
-        padding: 0.75rem 0.5rem;
+        padding: 0.5rem;
         gap: 0.5rem;
     }
 
@@ -1188,16 +1204,21 @@ tbody tr:hover {
     }
 
     .theme-picker {
-        width: 100%;
-        flex-wrap: wrap;
+        width: auto !important;
+        flex-wrap: nowrap !important;
+        gap: 0.3rem !important;
     }
 
     .theme-picker select,
     .theme-picker button {
-        font-size: 0.7rem !important;
-        padding: 0.3rem 0.5rem !important;
-        flex: 1;
-        min-width: 70px;
+        font-size: 0.65rem !important;
+        padding: 0.3rem 0.4rem !important;
+        flex: 0 1 auto;
+        min-width: 60px;
+    }
+
+    .theme-picker select {
+        max-width: 100px;
     }
 
     .main-content {
@@ -1241,21 +1262,22 @@ tbody tr:hover {
 
     .summary-card {
         padding: 0.75rem;
-        gap: 0.75rem;
-    }
-
-    .summary-card h2 {
-        font-size: 1.1rem;
-    }
-
-    .summary-card h3 {
-        font-size: 0.75rem;
+        gap: 0.5rem;
     }
 
     .card-icon {
         width: 36px;
         height: 36px;
         font-size: 1rem;
+    }
+
+    .card-info h3 {
+        font-size: 0.7rem;
+    }
+
+    .card-info h2 {
+        font-size: 1rem;
+        text-align: right;
     }
 
     .card {
@@ -1428,8 +1450,8 @@ tbody tr:hover {
         padding: 0.6rem;
     }
 
-    .summary-card h2 {
-        font-size: 1rem;
+    .card-info h2 {
+        font-size: 0.95rem;
     }
 
     .card {
@@ -1467,6 +1489,10 @@ tbody tr:hover {
     .type-toggle .toggle-btn {
         padding: 0.4rem;
         font-size: 0.75rem;
+    }
+
+    .theme-picker select {
+        max-width: 90px;
     }
 }
 
