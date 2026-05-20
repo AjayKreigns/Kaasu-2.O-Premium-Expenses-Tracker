@@ -86,6 +86,8 @@ const app = {
             // Layout & Themes
             themeSelector: document.getElementById('theme-selector'),
             themeModeToggle: document.getElementById('theme-mode-toggle'),
+            mobileMenuBtn: document.getElementById('mobile-menu-btn'),
+            mobileDropdown: document.getElementById('mobile-dropdown'),
 
             dashDateFilter: document.getElementById('dash-date-filter'),
             dashCustomDates: document.getElementById('dash-custom-dates'),
@@ -118,6 +120,20 @@ const app = {
                 this.navigate(e.currentTarget.dataset.page);
             });
         });
+
+        // Mobile Menu
+        if (this.els.mobileMenuBtn && this.els.mobileDropdown) {
+            this.els.mobileMenuBtn.addEventListener('click', () => {
+                this.els.mobileDropdown.classList.toggle('active');
+            });
+
+            // Close dropdown if clicked outside
+            document.addEventListener('click', (e) => {
+                if (!this.els.mobileDropdown.contains(e.target) && !this.els.mobileMenuBtn.contains(e.target)) {
+                    this.els.mobileDropdown.classList.remove('active');
+                }
+            });
+        }
 
         // Modals
         this.els.btnAddExp.addEventListener('click', () => this.openTransactionModal());
@@ -1217,7 +1233,7 @@ const app = {
             totalDashExp += val;
         });
 
-        // Ensure we don't divide by zero for rendering percentages 
+        // Ensure we don't divide by zero for rendering percentages
         const dashTotalDivisor = totalDashExp > 0 ? totalDashExp : 1;
 
         const dashBarData = Object.keys(catTotals).map((key, index) => ({

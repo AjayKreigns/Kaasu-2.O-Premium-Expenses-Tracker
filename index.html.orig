@@ -22,12 +22,6 @@
 
 <body>
     <div class="app-container">
-        <ul class="nav-links mobile-bottom-nav">
-            <li class="active" data-page="dashboard"><i class='bx bxs-dashboard'></i> Dashboard</li>
-            <li data-page="transactions"><i class='bx bx-transfer'></i> Transactions</li>
-            <li data-page="budget"><i class='bx bx-target-lock'></i> Budgets</li>
-            <li data-page="reports"><i class='bx bx-pie-chart-alt-2'></i> Reports</li>
-        </ul>
         <!-- Sidebar Navigation -->
         <nav class="sidebar animate-left">
             <div class="logo-container">
@@ -36,43 +30,38 @@
                     <span>Kaasu</span>
                 </div>
                 <div class="by-author">by AK</div>
-                <button id="mobile-menu-btn" class="btn btn-icon mobile-only" style="display: none; color: var(--text-primary); margin-left: auto;">
-                    <i class='bx bx-menu' style="font-size: 1.8rem;"></i>
-                </button>
             </div>
 
-            <ul class="nav-links desktop-sidebar-nav">
+            <ul class="nav-links">
                 <li class="active" data-page="dashboard"><i class='bx bxs-dashboard'></i> Dashboard</li>
                 <li data-page="transactions"><i class='bx bx-transfer'></i> Transactions</li>
                 <li data-page="budget"><i class='bx bx-target-lock'></i> Budgets</li>
                 <li data-page="reports"><i class='bx bx-pie-chart-alt-2'></i> Reports</li>
             </ul>
 
-            <div id="mobile-dropdown" class="mobile-dropdown">
-                <div class="feedback-section" style="margin-top: auto; margin-bottom: 2rem;">
-                    <button type="button" class="btn" id="btn-suggest-upgrades"
-                        style="width: 100%; justify-content: center; padding: 0.6rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer;">
-                        <i class='bx bx-mail-send'></i> Suggest Upgrades
-                    </button>
-                </div>
+            <div class="feedback-section" style="margin-top: auto; margin-bottom: 2rem;">
+                <button type="button" class="btn" id="btn-suggest-upgrades"
+                    style="width: 100%; justify-content: center; padding: 0.6rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer;">
+                    <i class='bx bx-mail-send'></i> Suggest Upgrades
+                </button>
+            </div>
 
-                <div class="theme-picker" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <div>
-                        <label
-                            style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block;">Theme
-                            Palette</label>
-                        <select id="theme-selector" class="input-field" style="padding: 0.5rem; font-size: 0.9rem;">
-                            <option value="panther">Black Panther</option>
-                            <option value="matrix">Neon Matrix</option>
-                            <option value="cyberpunk">Cyberpunk</option>
-                            <option value="ocean">Deep Ocean</option>
-                        </select>
-                    </div>
-                    <button id="theme-mode-toggle" class="btn btn-secondary"
-                        style="width: 100%; justify-content: center; padding: 0.5rem; font-size: 0.9rem;">
-                        <i class='bx bx-sun'></i> Toggle Mode
-                    </button>
+            <div class="theme-picker" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div>
+                    <label
+                        style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block;">Theme
+                        Palette</label>
+                    <select id="theme-selector" class="input-field" style="padding: 0.5rem; font-size: 0.9rem;">
+                        <option value="panther">Black Panther</option>
+                        <option value="matrix">Neon Matrix</option>
+                        <option value="cyberpunk">Cyberpunk</option>
+                        <option value="ocean">Deep Ocean</option>
+                    </select>
                 </div>
+                <button id="theme-mode-toggle" class="btn btn-secondary"
+                    style="width: 100%; justify-content: center; padding: 0.5rem; font-size: 0.9rem;">
+                    <i class='bx bx-sun'></i> Toggle Mode
+                </button>
             </div>
         </nav>
 
